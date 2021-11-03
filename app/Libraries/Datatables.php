@@ -3,7 +3,7 @@
 /*
 * =============================================
 * Datatables for Codeigniter 4
-* Version           : 1.0
+* Version           : 1.0.1
 * Created By       : Alif Bintoro <alifbintoro77@gmail.com>
 * =============================================
 */
@@ -12,9 +12,9 @@ namespace App\Libraries;
 
 class Datatables 
 {
-	protected $db;
-	protected $request;
-	protected $builder;
+    protected $db;
+    protected $request;
+    protected $builder;
     protected $column;
     protected $columnSearch = [];
     protected $order = [];
@@ -24,14 +24,14 @@ class Datatables
     protected $queryCount;
     protected $lastQuery = [];
 
-	public function __construct(Array $config)
-	{
-		$this->db = \Config\Database::connect(@$config['db'] ?? 'default');
-		$this->builder = $this->db->table($config['table']);
-		$this->request = \Config\Services::request();
-	}
+    public function __construct(Array $config)
+    {
+        $this->db = \Config\Database::connect(@$config['db'] ?? 'default');
+        $this->builder = $this->db->table($config['table']);
+        $this->request = \Config\Services::request();
+    }
 
-	protected function balanceChars($str, $open, $close)
+    protected function balanceChars($str, $open, $close)
     {
         $openCount = substr_count($str, $open);
         $closeCount = substr_count($str, $close);
@@ -96,6 +96,13 @@ class Datatables
         return $this;
     }
 
+    public function whereIn($keyCondition, $val = [])
+    {
+        $this->where[] = [$keyCondition, $val, 'in'];
+
+        return $this;
+    }
+
     public function orderBy($column, $order = 'ASC')
     {
         if(is_array($column)){
@@ -127,10 +134,18 @@ class Datatables
 
         if(!empty($this->where)){
             foreach($this->where as $val){
-                if($val[2] == 'and'){
-                    $this->builder->where($val[0],$val[1]);
-                }else{
-                    $this->builder->orWhere($val[0], $val[1]);
+                switch($val[2]){
+                    case 'and':
+                        $this->builder->where($val[0],$val[1]);
+                    break;
+
+                    case 'or':
+                        $this->builder->orWhere($val[0], $val[1]);
+                    break;
+
+                    case 'in':
+                        $this->builder->whereIn($val[0], $val[1]);
+                    break;
                 }
             }
         }
@@ -224,6 +239,5 @@ class Datatables
             echo json_encode($output);
         }
     }
-
 
 }
